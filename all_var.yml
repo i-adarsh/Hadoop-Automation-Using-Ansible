@@ -1,0 +1,45 @@
+#============================================
+# all
+
+jdk_path: "/Users/adarshkumar/Documents/Ansible/Hadoop/RPM/jdk-8u171-linux-x64.rpm"
+hadoop_path: "/Users/adarshkumar/Documents/Ansible/Hadoop/RPM/hadoop-1.2.1-1.x86_64.rpm"
+hadoop_software: "hadoop-1.2.1-1.x86_64.rpm"
+jdk_software: "jdk-8u171-linux-x64.rpm"
+install_java: "rpm -i {{ jdk_software }}"
+install_hadoop: "rpm -i {{ hadoop_software}} --force"
+jps_process: "jps"
+
+#=============================================
+# Configuring Master ( NameNode )
+
+namenode_core_site: "/Users/adarshkumar/Documents/Ansible/Hadoop/namenode/core-site.xml"
+namenode_hdfs_site: "/Users/adarshkumar/Documents/Ansible/Hadoop/namenode/hdfs-site.xml"
+namenode_delete_directory: "rm -rf /namenode"
+namenode_directory_path: "/namenode"
+namenode_stop: "hadoop-daemon.sh stop namenode"
+namenode_start: "hadoop-daemon.sh start namenode"
+
+
+#==============================================
+# Configuring Slave ( Datanode )
+
+datanode_core_site: "/Users/adarshkumar/Documents/Ansible/Hadoop/datanode/core-site.xml"
+datanode_hdfs_site: "/Users/adarshkumar/Documents/Ansible/Hadoop/datanode/hdfs-site.xml"
+datanode_delete_directory: "rm -rf /datanode"
+datanode_directory_path: "/datanode"
+datanode_stop: "hadoop-daemon.sh stop datanode"
+datanode_start: "hadoop-daemon.sh start datanode"
+
+
+#==============================================
+# Configuring Client 
+
+client_core_site: "/Users/adarshkumar/Documents/Ansible/Hadoop/client/core-site.xml"
+client_report: "hadoop fs -ls  /"
+file_name: "file.txt"
+removing_files: "hadoop fs -rm /{{ file_name }}"
+client_src_file: "/Users/adarshkumar/Documents/Ansible/Hadoop/client/{{ file_name }}"
+client_dest_file: "/root/"
+put_files: "hadoop fs -put  /root/{{ file_name }}   / "
+available_files_report: "hadoop fs -ls  /"
+hadoop_report_running: "hadoop dfsadmin -report"

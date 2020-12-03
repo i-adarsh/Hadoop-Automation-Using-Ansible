@@ -1,0 +1,76 @@
+- hosts: all
+  vars_files: 
+        - all_var.yml
+  tasks:
+  - name: "Copying the JDK File"
+    copy:
+        src: "{{ jdk_path }}"
+        dest: "/root/"
+  - name: "Copying the Hadoop File"
+    copy:
+        src: "{{ hadoop_path }}"
+        dest: "/root/"
+
+  - name: "Installing JDK"
+    shell: "{{ install_java }}"
+    register: Java
+    ignore_errors: yes
+  - name: "JDK Installation"
+    debug:
+        var: Java.stdout
+
+  - name: "Installing Hadoop"
+    shell: "{{ install_hadoop }}"
+    register: Hadoop
+    ignore_errors: yes
+  - name: "Hadoop Installation"
+    debug: 
+        var: Hadoop.stdout
+
+  - name: Stopping the Firewall
+    systemd: name=firewalld state=stopped
+    ignore_errors: yes
+    tags:
+      - install
+      - atomic
+      - firewalld
+
+#========================================================
+# Configuring Client 
+
+- hosts: client
+  vars_files: 
+        - all_var.yml
+  tasks:
+  - name: "Copying the core-site.xml File"
+    copy: 
+        src: "{{ client_core_site }}"
+        dest: "/etc/hadoop/"
+
+  - name: "Files Available"
+    shell: "{{ client_report }}"
+    register: files
+  - name: "Showing Files"
+    debug:
+        var: files
+  - name: "Deleting Previous Files"
+    shell: "{{ removing_files }}"
+    ignore_errors: yes
+  - name: "Copying the Files to the Client Node"
+    copy:
+        src: "{{ client_src_file }}"
+        dest: "{{ client_dest_file }}"
+  - name: "Uploading the Files by the Client"
+    shell: "{{ put_files }}"
+  - name: "Files Available"
+    shell: "{{ available_files_report }}"
+    register: report
+  - name: "Showing Files"
+    debug:
+        var: report
+  - name: "Running Hadoop Report"
+    shell: "{{ hadoop_report_running }}"
+    register: hadoop_report_running
+  - name: "Showing Hadoop Report"
+    debug:
+        var: hadoop_report_running.stdout

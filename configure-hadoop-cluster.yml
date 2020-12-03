@@ -1,0 +1,189 @@
+- hosts: all
+  vars_files: 
+        - all_var.yml
+  tasks:
+  - name: "Copying the JDK File"
+    copy:
+        src: "{{ jdk_path }}"
+        dest: "/root/"
+  - name: "Copying the Hadoop File"
+    copy:
+        src: "{{ hadoop_path }}"
+        dest: "/root/"
+
+  - name: "Installing JDK"
+    shell: "{{ install_java }}"
+    register: Java
+    ignore_errors: yes
+  - name: "JDK Installation"
+    debug:
+        var: Java.stdout
+
+  - name: "Installing Hadoop"
+    shell: "{{ install_hadoop }}"
+    register: Hadoop
+    ignore_errors: yes
+  - name: "Hadoop Installation"
+    debug: 
+        var: Hadoop.stdout
+
+  - name: Stopping the Firewall
+    systemd: name=firewalld state=stopped
+    ignore_errors: yes
+    tags:
+      - install
+      - atomic
+      - firewalld
+
+#========================================================
+# Configuring Master ( NameNode )
+
+- hosts: master-namenode
+  vars_files:
+        - all_var.yml
+  tasks:
+  - name: "Copying the core-site.xml File"
+    copy: 
+        src: "{{ namenode_core_site }}"
+        dest: "/etc/hadoop/"
+  - name: "Copying the hdfs-site.xml File"
+    copy:
+        src: "{{ namenode_hdfs_site }}"
+        dest: "/etc/hadoop/"
+  
+  - name: "Deleting the Present Directory"
+    shell: "{{ namenode_delete_directory }}"
+    ignore_errors: yes
+
+  - name: "Creating Directory"
+    file:
+        state: directory
+        path: "{{ namenode_directory_path }}"
+
+  - name: "Formatting the Directory"
+    shell: "echo Y | hadoop namenode -format"
+    ignore_errors: yes
+    register: format
+  - name: "Formatting NameNode"
+    debug:
+        var: format.stdout
+
+  - name: "Stopping Hadoop Services"
+    shell: "{{ namenode_stop }}"
+    ignore_errors: yes
+    register: hadoop_services_stop
+  - name: "Stopping Hadoop"
+    debug:
+        var: hadoop_services_stop.stdout
+  - name: "Starting Hadoop Services"
+    shell: "{{ namenode_start }}"
+    ignore_errors: yes
+    register: hadoop_services_start
+  - name: "Starting Hadoop"
+    debug: 
+        var: hadoop_services_start.stdout
+
+  - name: "Java Process"
+    shell: "{{ jps_process }}"
+    register: Java_Process
+  - name: "Java Process"
+    debug: 
+        var: Java_Process.stdout
+
+
+
+#========================================================
+# Configuring Slave ( Datanode )
+
+- hosts: slave-datanode
+  vars_files: 
+        - all_var.yml
+  tasks:
+  - name: "Copying the core-site.xml File"
+    copy: 
+        src: "{{ datanode_core_site }}"
+        dest: "/etc/hadoop/"
+  - name: "Copying the hdfs-site.xml File"
+    copy:
+        src: "{{ datanode_hdfs_site }}"
+        dest: "/etc/hadoop/"
+  
+  - name: "Deleting the Present Directory"
+    shell: "{{ datanode_delete_directory }}"
+    ignore_errors: yes
+
+  - name: "Creating Directory"
+    file:
+        state: directory
+        path: "{{ datanode_directory_path }}"
+
+  - name: "Formatting the Directory"
+    shell: "echo Y | hadoop namenode -format"
+    ignore_errors: yes
+    register: format
+  - name: "Formatting NameNode"
+    debug:
+        var: format.stdout
+
+  - name: "Stopping the NameNode"
+    shell: "{{ datanode_stop }}"
+    ignore_errors: yes
+    register: hadoop_services_stop
+  - name: "Stopping Hadoop"
+    debug:
+        var: hadoop_services_stop.stdout
+  - name: "Starting the NameNode"
+    shell: "{{ datanode_start }}"
+    ignore_errors: yes
+    register: hadoop_services_start
+  - name: "Starting Hadoop"
+    debug: 
+        var: hadoop_services_start.stdout
+
+  - name: "Java Process"
+    shell: "{{ jps_process }}"
+    register: Java_Process
+  - name: "Java Process"
+    debug: 
+        var: Java_Process.stdout
+
+
+#========================================================
+# Configuring Client 
+
+- hosts: client
+  vars_files: 
+        - all_var.yml
+  tasks:
+  - name: "Copying the core-site.xml File"
+    copy: 
+        src: "{{ client_core_site }}"
+        dest: "/etc/hadoop/"
+
+  - name: "Files Available"
+    shell: "{{ client_report }}"
+    register: files
+  - name: "Showing Files"
+    debug:
+        var: files
+  - name: "Deleting Previous Files"
+    shell: "{{ removing_files }}"
+    ignore_errors: yes
+  - name: "Copying the Files to the Client Node"
+    copy:
+        src: "{{ client_src_file }}"
+        dest: "{{ client_dest_file }}"
+  - name: "Uploading the Files by the Client"
+    shell: "{{ put_files }}"
+  - name: "Files Available"
+    shell: "{{ available_files_report }}"
+    register: report
+  - name: "Showing Files"
+    debug:
+        var: report
+  - name: "Running Hadoop Report"
+    shell: "{{ hadoop_report_running }}"
+    register: hadoop_report_running
+  - name: "Showing Hadoop Report"
+    debug:
+        var: hadoop_report_running.stdout

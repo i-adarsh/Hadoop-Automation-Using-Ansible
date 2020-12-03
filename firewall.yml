@@ -1,0 +1,9 @@
+- hosts: all
+  tasks:
+  - name: be sure firewalld is stopped
+    systemd: name=firewalld state=stopped
+    ignore_errors: yes
+    tags:
+      - install
+      - atomic
+      - firewalld
